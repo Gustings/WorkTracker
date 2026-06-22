@@ -260,6 +260,7 @@ namespace WorkTracker.ViewModels
         private DateTime _selectedDate = DateTime.Today;
         private DateTime _currentWeekStart = OvertimeCalculator.GetStartOfWeek(DateTime.Today);
         private DateTime _calendarMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        private DateTime _lastToday = DateTime.Today;
         private string _originalProcessName = string.Empty;
         
         // Timeline block editing fields
@@ -776,6 +777,41 @@ namespace WorkTracker.ViewModels
             LoadScheduleSettings();
             RefreshHolidayLogsList();
             RefreshData();
+
+            // Setup a timer to check if the day rolled over (e.g. crossing midnight) and auto-advance views
+            var midnightTimer = new System.Windows.Threading.DispatcherTimer();
+            midnightTimer.Interval = TimeSpan.FromSeconds(30);
+            midnightTimer.Tick += (s, e) =>
+            {
+                if (DateTime.Today != _lastToday)
+                {
+                    DateTime oldToday = _lastToday;
+                    _lastToday = DateTime.Today;
+
+                    bool changed = false;
+                    if (SelectedDate == oldToday)
+                    {
+                        SelectedDate = DateTime.Today;
+                        changed = true;
+                    }
+                    if (CurrentWeekStart == OvertimeCalculator.GetStartOfWeek(oldToday))
+                    {
+                        CurrentWeekStart = OvertimeCalculator.GetStartOfWeek(DateTime.Today);
+                        changed = true;
+                    }
+                    if (CalendarMonth.Year == oldToday.Year && CalendarMonth.Month == oldToday.Month)
+                    {
+                        CalendarMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                        changed = true;
+                    }
+
+                    if (!changed)
+                    {
+                        RefreshData();
+                    }
+                }
+            };
+            midnightTimer.Start();
         }
 
         private void LoadScheduleSettings()
@@ -923,6 +959,11 @@ namespace WorkTracker.ViewModels
                                            i == 5 ? TargetSat : TargetSun;
 
                     double dayTarget = Math.Max(0, baseDayTarget - dayTimeOff - daySickHours);
+
+                    if ((day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday) && dayHoursWorked == 0 && dayTarget == 0)
+                    {
+                        continue;
+                    }
 
                     double standard = Math.Min(dayHoursWorked, dayTarget);
                     double overtime = Math.Max(0, dayHoursWorked - dayTarget);
