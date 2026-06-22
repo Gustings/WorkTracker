@@ -123,6 +123,30 @@
                             </Style>
                         </Button.Style>
                     </Button>
+
+                    <Button Content="🚀  Update" Command="{Binding SetSettingsTabCommand}" CommandParameter="Update">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentSettingsTab}" Value="Update">
+                                        <Setter Property="Tag" Value="Active" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button Content="ℹ️  About App" Command="{Binding SetSettingsTabCommand}" CommandParameter="About">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentSettingsTab}" Value="About">
+                                        <Setter Property="Tag" Value="Active" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
 
                 <!-- Footer back button -->
@@ -372,30 +396,14 @@
 
                 <!-- Quick Actions Panel -->
                 <Border Grid.Row="0" Style="{StaticResource CardStyle}" Padding="15" Margin="0,0,0,15">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-                        
-                        <!-- Left Column: simulations -->
-                        <StackPanel Grid.Column="0" Margin="0,0,15,0">
-                            <TextBlock Text="Simulations &amp; Testing Actions:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextMainBrush}" Margin="0,0,0,10" />
-                            <UniformGrid Columns="3" Margin="0,0,0,5">
-                                <Button Content="💤 Sim Idle (15m)" Click="BtnSimIdle_Click" Style="{StaticResource PrimaryButtonStyle}" Height="34" Margin="0,0,8,0" ToolTip="Simulates returning from a 15-minute idle block" />
-                                <Button Content="🔒 Sim Unlock (20m)" Click="BtnSimUnlock_Click" Style="{StaticResource PrimaryButtonStyle}" Height="34" Margin="0,0,8,0" ToolTip="Simulates returning from a 20-minute session lock" />
-                                <Button Content="🔄 Sync Calendar" Click="BtnSyncCalendar_Click" Style="{StaticResource ModernButtonStyle}" Height="34" ToolTip="Forces an immediate calendar integration sync" />
-                            </UniformGrid>
-                        </StackPanel>
-                        
-                        <!-- Right Column: Auto-Updates -->
-                        <Border Grid.Column="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0" Padding="15,0,0,0">
-                            <StackPanel>
-                                <TextBlock Text="Software Update:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextMainBrush}" Margin="0,0,0,10" />
-                                <Button x:Name="BtnCheckUpdate" Content="Check for Updates" Click="BtnCheckUpdate_Click" Style="{StaticResource PrimaryButtonStyle}" Height="34" ToolTip="Check for newer releases from GitHub" />
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+                    <StackPanel>
+                        <TextBlock Text="Simulations &amp; Testing Actions:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextMainBrush}" Margin="0,0,0,10" />
+                        <UniformGrid Columns="3" Margin="0,0,0,5">
+                            <Button Content="💤 Sim Idle (15m)" Click="BtnSimIdle_Click" Style="{StaticResource PrimaryButtonStyle}" Height="34" Margin="0,0,8,0" ToolTip="Simulates returning from a 15-minute idle block" />
+                            <Button Content="🔒 Sim Unlock (20m)" Click="BtnSimUnlock_Click" Style="{StaticResource PrimaryButtonStyle}" Height="34" Margin="0,0,8,0" ToolTip="Simulates returning from a 20-minute session lock" />
+                            <Button Content="🔄 Sync Calendar" Click="BtnSyncCalendar_Click" Style="{StaticResource ModernButtonStyle}" Height="34" ToolTip="Forces an immediate calendar integration sync" />
+                        </UniformGrid>
+                    </StackPanel>
                 </Border>
 
                 <!-- Logs Textbox Panel -->
@@ -423,6 +431,115 @@
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,10">
                     <Button Content="Clear Logs" Click="BtnClearLogs_Click" Style="{StaticResource ModernButtonStyle}" Width="100" Height="34" />
                 </StackPanel>
+            </Grid>
+
+            <!-- 5. UPDATE VIEW -->
+            <Grid Grid.Row="1" Visibility="{Binding CurrentSettingsTab, Converter={StaticResource TabToVisibilityConverter}, ConverterParameter=Update}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /> <!-- Action Panel -->
+                    <RowDefinition Height="*" />    <!-- Update Log Panel -->
+                </Grid.RowDefinitions>
+
+                <!-- Check for Updates Action Card -->
+                <Border Grid.Row="0" Style="{StaticResource CardStyle}" Padding="15" Margin="0,0,0,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Keep Work Tracker Updated" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextMainBrush}" Margin="0,0,0,4"/>
+                            <TextBlock Text="Check for the latest updates directly from the official GitHub repository." FontSize="11" Foreground="{StaticResource TextSecBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="1" x:Name="BtnCheckUpdate" Content="Check for Updates" Click="BtnCheckUpdate_Click" Style="{StaticResource PrimaryButtonStyle}" Height="36" Width="160" VerticalAlignment="Center" ToolTip="Check for newer releases from GitHub" />
+                    </Grid>
+                </Border>
+
+                <!-- Update Logs Card -->
+                <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Update Progress &amp; Logs:" FontSize="12" Foreground="{StaticResource TextSecBrush}" Margin="0,0,0,8" />
+                        <TextBox Grid.Row="1" x:Name="TxtUpdateLogs" 
+                                 IsReadOnly="True" 
+                                 VerticalScrollBarVisibility="Auto" 
+                                 HorizontalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas, Courier New" 
+                                 FontSize="11" 
+                                 Background="{StaticResource CardHeaderBgBrush}" 
+                                 Foreground="{StaticResource TextMainBrush}" 
+                                 BorderBrush="{StaticResource BorderBrush}" 
+                                 Padding="8" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- 6. ABOUT APP VIEW -->
+            <Grid Grid.Row="1" Visibility="{Binding CurrentSettingsTab, Converter={StaticResource TabToVisibilityConverter}, ConverterParameter=About}">
+                <!-- Content Card -->
+                <Border Style="{StaticResource CardStyle}" Margin="0" Padding="25">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" /> <!-- Logo and Title -->
+                            <RowDefinition Height="Auto" /> <!-- Description -->
+                            <RowDefinition Height="*" />    <!-- Details/Credits -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Logo and Title Block -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,20">
+                            <Image Source="pack://application:,,,/app_icon.png" Width="64" Height="64" Margin="0,0,15,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Work Tracker" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextMainBrush}" />
+                                <TextBlock x:Name="TxtAboutVersion" Text="v1.4.2" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextSecBrush}" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Description Block -->
+                        <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0,0,0,15" Margin="0,0,0,15">
+                            <TextBlock Text="Work Tracker is a smart utility designed to track your daily work timeline, active sessions, and meetings, calculate overtime, sync calendar events, and manage holidays. It helps keep your focus and automatically monitors your active hours." 
+                                       FontSize="13" Foreground="{StaticResource TextMainBrush}" TextWrapping="Wrap" LineHeight="18" />
+                        </Border>
+
+                        <!-- Details Block -->
+                        <StackPanel Grid.Row="2">
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Developer:" FontWeight="SemiBold" Foreground="{StaticResource TextSecBrush}" />
+                                <TextBlock Grid.Column="1" Text="Gustings" Foreground="{StaticResource TextMainBrush}" />
+                            </Grid>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="GitHub Repository:" FontWeight="SemiBold" Foreground="{StaticResource TextSecBrush}" />
+                                <TextBlock Grid.Column="1">
+                                    <Hyperlink NavigateUri="https://github.com/Gustings/WorkTracker" RequestNavigate="Hyperlink_RequestNavigate">
+                                        https://github.com/Gustings/WorkTracker
+                                    </Hyperlink>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Platform:" FontWeight="SemiBold" Foreground="{StaticResource TextSecBrush}" />
+                                <TextBlock Grid.Column="1" Text=".NET 9.0 (WPF / Windows)" Foreground="{StaticResource TextMainBrush}" />
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
         </Grid>
     </Grid>

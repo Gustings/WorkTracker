@@ -1,4 +1,4 @@
-# Automated Build, Sign, and Installer Compile Script for Work Tracker v1.4.1
+# Automated Build, Sign, and Installer Compile Script for Work Tracker v1.4.2
 $ErrorActionPreference = "Stop"
 
 $subject = "CN=Work Tracker Local Testing"
@@ -36,9 +36,9 @@ Write-Host "`n=== Step 4: Compiling Setup Installer ==="
 Write-Host "Successfully compiled installer"
 
 # 5. Sign Installer
-Write-Host "`n=== Step 5: Digitally Signing WorkTrackerSetup-1.4.1.exe ==="
-$setupPath = "..\Installers\WorkTrackerSetup-1.4.1.exe"
+Write-Host "`n=== Step 5: Digitally Signing WorkTrackerSetup-1.4.2.exe ==="
+$setupPath = "..\Installers\WorkTrackerSetup-1.4.2.exe"
 & $signtool sign /sha1 $thumb /fd sha256 /tr http://timestamp.digicert.com /td sha256 $setupPath
 Write-Host "Successfully signed installer: $setupPath"
 
-Write-Host "`n=== SUCCESS! Version 1.4.1 has been published, signed, and packaged! ==="
+Write-Host "`n=== SUCCESS! Version 1.4.2 has been published, signed, and packaged! ==="

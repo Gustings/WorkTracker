@@ -17,6 +17,9 @@ namespace WorkTracker.Views
             TxtLogs.Text = AppLogger.GetLogs();
             TxtLogs.ScrollToEnd();
 
+            // Display about version
+            TxtAboutVersion.Text = $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.4.2"}";
+
             // Subscribe to real-time logs
             AppLogger.LogAdded += OnLogAdded;
 
@@ -79,20 +82,47 @@ namespace WorkTracker.Views
             AppLogger.Log("Logs display cleared by user.");
         }
 
+        private void LogUpdate(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                TxtUpdateLogs.AppendText($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
+                TxtUpdateLogs.ScrollToEnd();
+            });
+        }
+
+        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = e.Uri.AbsoluteUri,
+                    UseShellExecute = true
+                });
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"Error opening hyperlink: {ex.Message}");
+            }
+        }
+
         private async void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
         {
             BtnCheckUpdate.IsEnabled = false;
             BtnCheckUpdate.Content = "Checking...";
-            AppLogger.Log("Checking for updates from GitHub...");
+            TxtUpdateLogs.Clear();
+            LogUpdate("Checking for updates from GitHub...");
 
             try
             {
                 var updateService = new UpdateService();
-                var updateInfo = await updateService.CheckForUpdatesAsync();
+                var updateInfo = await updateService.CheckForUpdatesAsync(LogUpdate);
 
                 if (updateInfo.HasUpdate)
                 {
-                    AppLogger.Log($"New update available: {updateInfo.LatestVersion}");
+                    LogUpdate($"New update available: {updateInfo.LatestVersion}");
                     var result = System.Windows.MessageBox.Show(
                         this,
                         $"A new update (v{updateInfo.LatestVersion}) is available.\n\nRelease Notes:\n{updateInfo.ReleaseNotes}\n\nWould you like to download and install it silently now?",
@@ -103,7 +133,7 @@ namespace WorkTracker.Views
 
                     if (result == MessageBoxResult.Yes)
                     {
-                        AppLogger.Log($"Downloading update from: {updateInfo.DownloadUrl}");
+                        LogUpdate($"Downloading update from: {updateInfo.DownloadUrl}");
                         BtnCheckUpdate.Content = "Downloading 0%...";
 
                         await updateService.DownloadAndInstallUpdateAsync(updateInfo.DownloadUrl, progress =>
@@ -112,14 +142,18 @@ namespace WorkTracker.Views
                             {
                                 BtnCheckUpdate.Content = $"Downloading {(int)(progress * 100)}%...";
                             });
-                        });
+                        }, LogUpdate);
                         return; // App will shutdown inside DownloadAndInstallUpdateAsync
+                    }
+                    else
+                    {
+                        LogUpdate("Update download deferred by user.");
                     }
                 }
                 else
                 {
                     Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
-                    AppLogger.Log($"Application is up to date (current: v{currentVersion})");
+                    LogUpdate($"Application is up to date (current: v{currentVersion.ToString(3)})");
                     System.Windows.MessageBox.Show(
                         this,
                         $"Your application is up to date.\n\nCurrent Version: v{currentVersion.ToString(3)}",
@@ -131,7 +165,7 @@ namespace WorkTracker.Views
             }
             catch (Exception ex)
             {
-                AppLogger.Log($"Error checking/downloading update: {ex.Message}");
+                LogUpdate($"Error checking/downloading update: {ex.Message}");
                 System.Windows.MessageBox.Show(
                     this,
                     $"Failed to check or install update: {ex.Message}",
