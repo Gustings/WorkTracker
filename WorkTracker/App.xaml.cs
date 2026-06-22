@@ -11,6 +11,7 @@ using WorkTracker.Data;
 using WorkTracker.Services;
 using WorkTracker.Views;
 using WorkTracker.ViewModels;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Application = System.Windows.Application;
 
@@ -81,6 +82,9 @@ namespace WorkTracker
 
             // 6. Monitor session lock/unlock events to capture AFK sessions
             Microsoft.Win32.SystemEvents.SessionSwitch += SystemEvents_SessionSwitch;
+
+            // 7. Auto check for updates on startup
+            CheckForUpdatesOnStartup();
         }
 
         private void SetupTrayIcon()
@@ -882,17 +886,90 @@ namespace WorkTracker
             }
         }
 
+        private bool IsFocusModeEnabled()
+        {
+            try
+            {
+                using var db = new DatabaseContext();
+                var setting = db.AppSettings.Find("FocusModeEnabled");
+                return setting != null && setting.Value == "true";
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void LogAutomatedOfflineWork(DateTime startTime, double durationSeconds, string category, string description)
+        {
+            try
+            {
+                using var db = new DatabaseContext();
+                db.AppUsageLogs.Add(new AppUsageLog
+                {
+                    ProcessName = "offline",
+                    WindowTitle = description,
+                    StartTime = startTime,
+                    EndTime = startTime.AddSeconds(durationSeconds),
+                    Category = category
+                });
+                db.SaveChanges();
+                AppLogger.Log($"Automated idle log: {category} - {description}");
+
+                Dispatcher.BeginInvoke(() =>
+                {
+                    if (_mainWindow?.DataContext is MainViewModel mainVm)
+                    {
+                        mainVm.RefreshData();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"Error saving automated idle log: {ex.Message}");
+            }
+        }
+
         private void OnUserReturnedFromIdle(object? sender, IdleEventArgs e)
         {
+            // Reset lock variables
+            bool isLock = _wasLocked;
+            _wasLocked = false;
+            _lockTime = null;
+
             // Suppress prompt if away period goes past 16:00, starts after 16:00, or is on a weekend
             DateTime idleEndTime = e.IdleStartTime.AddSeconds(e.IdleDurationSeconds);
             bool isWeekend = e.IdleStartTime.DayOfWeek == DayOfWeek.Saturday || e.IdleStartTime.DayOfWeek == DayOfWeek.Sunday;
             if (isWeekend || e.IdleStartTime.TimeOfDay >= new TimeSpan(16, 0, 0) || idleEndTime.TimeOfDay > new TimeSpan(16, 0, 0))
             {
-                _wasLocked = false;
-                _lockTime = null;
                 AppLogger.Log($"Suppressed idle prompt because end time {idleEndTime:HH:mm} is after 16:00, starts after 16:00, or is weekend.");
                 return;
+            }
+
+            // 1. Focus Mode check
+            if (IsFocusModeEnabled())
+            {
+                AppLogger.Log("Focus Mode is ON. Suppressing idle prompt and auto-logging offline work.");
+                LogAutomatedOfflineWork(e.IdleStartTime, e.IdleDurationSeconds, "Offline Work", "Focus Mode - Auto Logged");
+                return;
+            }
+
+            // 2. Full-screen active app checks
+            if (e.WasFullScreen && !string.IsNullOrEmpty(e.LastProcessName))
+            {
+                string procLower = e.LastProcessName.ToLowerInvariant().Trim();
+                if (procLower == "teams" || procLower == "ms-teams" || procLower == "zoom")
+                {
+                    AppLogger.Log($"Smart suppression: Full-screen meeting app ({e.LastProcessName}) detected. Auto-logging Meeting.");
+                    LogAutomatedOfflineWork(e.IdleStartTime, e.IdleDurationSeconds, "Meeting", $"Meeting (Auto) - {e.LastProcessName}");
+                    return;
+                }
+                else if (procLower == "powerpnt" || procLower == "vlc" || procLower == "chrome" || procLower == "msedge")
+                {
+                    AppLogger.Log($"Smart suppression: Full-screen work/media app ({e.LastProcessName}) detected. Auto-logging Offline Work.");
+                    LogAutomatedOfflineWork(e.IdleStartTime, e.IdleDurationSeconds, "Offline Work", $"Work (Auto) - {e.LastProcessName}");
+                    return;
+                }
             }
 
             // Prompt user about what they did during idle period
@@ -900,10 +977,6 @@ namespace WorkTracker
             {
                 try
                 {
-                    bool isLock = _wasLocked;
-                    _wasLocked = false;
-                    _lockTime = null;
-
                     AppLogger.Log($"Prompting user for returning from idle (duration: {e.IdleDurationSeconds}s, lock: {isLock})");
 
                     var prompt = new IdlePromptWindow(e.IdleStartTime, e.IdleDurationSeconds, isLockPrompt: isLock)
@@ -1029,6 +1102,87 @@ namespace WorkTracker
                     }
                 }
             }
+        }
+
+        private void CheckForUpdatesOnStartup()
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    // Delay check slightly so the main window is rendered and fully loaded
+                    await Task.Delay(3000);
+
+                    AppLogger.Log("Auto update check: Initiating startup check...");
+                    var updateService = new UpdateService();
+                    var updateInfo = await updateService.CheckForUpdatesAsync(msg => AppLogger.Log($"[StartupUpdateCheck] {msg}"));
+
+                    if (updateInfo.HasUpdate)
+                    {
+                        AppLogger.Log($"Auto update check: Newer release available: v{updateInfo.LatestVersion}");
+                        
+                        Dispatcher.Invoke(() =>
+                        {
+                            try
+                            {
+                                var result = System.Windows.MessageBox.Show(
+                                    _mainWindow,
+                                    $"A new update (v{updateInfo.LatestVersion}) is available.\n\nRelease Notes:\n{updateInfo.ReleaseNotes}\n\nWould you like to download and install it silently now?",
+                                    "Update Available",
+                                    MessageBoxButton.YesNo,
+                                    MessageBoxImage.Question
+                                );
+
+                                if (result == MessageBoxResult.Yes)
+                                {
+                                    AppLogger.Log($"User accepted startup update v{updateInfo.LatestVersion}. Downloading...");
+                                    
+                                    Task.Run(async () =>
+                                    {
+                                        try
+                                        {
+                                            await updateService.DownloadAndInstallUpdateAsync(
+                                                updateInfo.DownloadUrl,
+                                                null,
+                                                msg => AppLogger.Log($"[StartupUpdate] {msg}")
+                                            );
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Dispatcher.Invoke(() =>
+                                            {
+                                                System.Windows.MessageBox.Show(
+                                                    _mainWindow,
+                                                    $"Failed to install update: {ex.Message}",
+                                                    "Update Error",
+                                                    MessageBoxButton.OK,
+                                                    MessageBoxImage.Error
+                                                );
+                                            });
+                                        }
+                                    });
+                                }
+                                else
+                                {
+                                    AppLogger.Log("User deferred startup update.");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                AppLogger.Log($"Error prompting startup update: {ex.Message}");
+                            }
+                        });
+                    }
+                    else
+                    {
+                        AppLogger.Log("Auto update check: App is up to date.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Log($"Error in background startup update check: {ex.Message}");
+                }
+            });
         }
     }
 }

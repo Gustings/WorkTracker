@@ -112,6 +112,18 @@
                         </Button.Style>
                     </Button>
 
+                    <Button Content="📅  Work Schedule" Command="{Binding SetSettingsTabCommand}" CommandParameter="Schedule">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentSettingsTab}" Value="Schedule">
+                                        <Setter Property="Tag" Value="Active" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
                     <Button Content="🛠️  Diagnostics &amp; Logs" Command="{Binding SetSettingsTabCommand}" CommandParameter="Diagnostics">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
@@ -382,6 +394,101 @@
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- 3b. WORK SCHEDULE VIEW -->
+            <Grid Grid.Row="1" Visibility="{Binding CurrentSettingsTab, Converter={StaticResource TabToVisibilityConverter}, ConverterParameter=Schedule}">
+                <Border Style="{StaticResource CardStyle}" Padding="20">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                            <TextBlock Text="Configure Daily Target Hours" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextMainBrush}" Margin="0,0,0,4"/>
+                            <TextBlock Text="Define your standard target work hours for each day of the week. These targets determine daily overtime threshold and weekly totals." FontSize="11" Foreground="{StaticResource TextSecBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="0,0,10,0">
+                                <!-- Mon -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Monday Target:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource TextMainBrush}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding TargetMon, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource CardHeaderBgBrush}" Foreground="{StaticResource TextMainBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="8"/>
+                                </Grid>
+
+                                <!-- Tue -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Tuesday Target:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource TextMainBrush}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding TargetTue, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource CardHeaderBgBrush}" Foreground="{StaticResource TextMainBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="8"/>
+                                </Grid>
+
+                                <!-- Wed -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Wednesday Target:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource TextMainBrush}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding TargetWed, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource CardHeaderBgBrush}" Foreground="{StaticResource TextMainBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="8"/>
+                                </Grid>
+
+                                <!-- Thu -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Thursday Target:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource TextMainBrush}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding TargetThu, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource CardHeaderBgBrush}" Foreground="{StaticResource TextMainBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="8"/>
+                                </Grid>
+
+                                <!-- Fri -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Friday Target:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource TextMainBrush}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding TargetFri, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource CardHeaderBgBrush}" Foreground="{StaticResource TextMainBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="8"/>
+                                </Grid>
+
+                                <!-- Sat -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Saturday Target:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource TextMainBrush}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding TargetSat, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource CardHeaderBgBrush}" Foreground="{StaticResource TextMainBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="8"/>
+                                </Grid>
+
+                                <!-- Sun -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Sunday Target:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource TextMainBrush}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding TargetSun, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource CardHeaderBgBrush}" Foreground="{StaticResource TextMainBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="8"/>
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Save Button -->
+                        <Button Grid.Row="2" Content="💾 Save Work Schedule" Command="{Binding SaveScheduleCommand}" Style="{StaticResource PrimaryButtonStyle}" Height="36" HorizontalAlignment="Left" Width="200" Margin="0,15,0,0"/>
                     </Grid>
                 </Border>
             </Grid>

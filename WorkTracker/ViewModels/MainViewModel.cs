@@ -133,6 +133,23 @@ namespace WorkTracker.ViewModels
         }
     }
 
+    public class DailyChartItem : ViewModelBase
+    {
+        private string _dayName = string.Empty;
+        private double _standardHours;
+        private double _overtimeHours;
+        private double _remainingTarget;
+        private string _workedText = string.Empty;
+        private string _targetText = string.Empty;
+
+        public string DayName { get => _dayName; set => SetField(ref _dayName, value); }
+        public double StandardHours { get => _standardHours; set => SetField(ref _standardHours, value); }
+        public double OvertimeHours { get => _overtimeHours; set => SetField(ref _overtimeHours, value); }
+        public double RemainingTarget { get => _remainingTarget; set => SetField(ref _remainingTarget, value); }
+        public string WorkedText { get => _workedText; set => SetField(ref _workedText, value); }
+        public string TargetText { get => _targetText; set => SetField(ref _targetText, value); }
+    }
+
     public class CalendarDayItem : ViewModelBase
     {
         private int _dayNumber;
@@ -257,6 +274,16 @@ namespace WorkTracker.ViewModels
         private double _weeklyNetOvertime;
         private double _weeklyOvertimeEarned;
         private double _lifetimeOvertimeBalance;
+
+        // Custom Schedule Targets
+        private double _targetMon = 8.0;
+        private double _targetTue = 8.0;
+        private double _targetWed = 8.0;
+        private double _targetThu = 8.0;
+        private double _targetFri = 8.0;
+        private double _targetSat = 0.0;
+        private double _targetSun = 0.0;
+        private bool _isFocusMode = false;
         
         // List properties
         private ObservableCollection<TimelineBlock>      _timeline       = new();
@@ -324,6 +351,7 @@ namespace WorkTracker.ViewModels
         // Navigation Command
         public ICommand SetTabCommand { get; }
         public ICommand SetSettingsTabCommand { get; }
+        public ICommand SaveScheduleCommand { get; }
         
         // Date/Week Command
         public ICommand PrevDayCommand { get; }
@@ -481,6 +509,85 @@ namespace WorkTracker.ViewModels
                 string sign = LifetimeOvertimeBalance >= 0 ? "+" : "";
                 return $"{sign}{LifetimeOvertimeBalance:F2} hrs";
             }
+        }
+
+        public double TargetMon
+        {
+            get => _targetMon;
+            set => SetField(ref _targetMon, value);
+        }
+
+        public double TargetTue
+        {
+            get => _targetTue;
+            set => SetField(ref _targetTue, value);
+        }
+
+        public double TargetWed
+        {
+            get => _targetWed;
+            set => SetField(ref _targetWed, value);
+        }
+
+        public double TargetThu
+        {
+            get => _targetThu;
+            set => SetField(ref _targetThu, value);
+        }
+
+        public double TargetFri
+        {
+            get => _targetFri;
+            set => SetField(ref _targetFri, value);
+        }
+
+        public double TargetSat
+        {
+            get => _targetSat;
+            set => SetField(ref _targetSat, value);
+        }
+
+        public double TargetSun
+        {
+            get => _targetSun;
+            set => SetField(ref _targetSun, value);
+        }
+
+        public bool IsFocusMode
+        {
+            get => _isFocusMode;
+            set
+            {
+                if (SetField(ref _isFocusMode, value))
+                {
+                    try
+                    {
+                        using var db = new DatabaseContext();
+                        var setting = db.AppSettings.Find("FocusModeEnabled");
+                        string valStr = value ? "true" : "false";
+                        if (setting != null)
+                        {
+                            setting.Value = valStr;
+                        }
+                        else
+                        {
+                            db.AppSettings.Add(new AppSetting { Key = "FocusModeEnabled", Value = valStr });
+                        }
+                        db.SaveChanges();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error saving focus mode setting: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        private ObservableCollection<DailyChartItem> _weeklyChartData = new();
+        public ObservableCollection<DailyChartItem> WeeklyChartData
+        {
+            get => _weeklyChartData;
+            set => SetField(ref _weeklyChartData, value);
         }
         #endregion
 
@@ -643,6 +750,7 @@ namespace WorkTracker.ViewModels
             SyncIcsNowCommand     = new RelayCommand(SyncIcsNow);
             RegisterHolidayCommand = new RelayCommand(RegisterHoliday);
             DeleteHolidayCommand = new RelayCommand<HolidayLog>(DeleteHoliday);
+            SaveScheduleCommand   = new RelayCommand(SaveScheduleSettings);
 
             // Load persisted ICS settings from DB
             try
@@ -665,8 +773,81 @@ namespace WorkTracker.ViewModels
             PrevMonthCommand = new RelayCommand(() => CalendarMonth = CalendarMonth.AddMonths(-1));
             NextMonthCommand = new RelayCommand(() => CalendarMonth = CalendarMonth.AddMonths(1));
             
+            LoadScheduleSettings();
             RefreshHolidayLogsList();
             RefreshData();
+        }
+
+        private void LoadScheduleSettings()
+        {
+            try
+            {
+                using var db = new DatabaseContext();
+                var settings = db.AppSettings.ToList();
+
+                _targetMon = GetScheduleSetting(settings, "Schedule_Monday", 8.0);
+                _targetTue = GetScheduleSetting(settings, "Schedule_Tuesday", 8.0);
+                _targetWed = GetScheduleSetting(settings, "Schedule_Wednesday", 8.0);
+                _targetThu = GetScheduleSetting(settings, "Schedule_Thursday", 8.0);
+                _targetFri = GetScheduleSetting(settings, "Schedule_Friday", 8.0);
+                _targetSat = GetScheduleSetting(settings, "Schedule_Saturday", 0.0);
+                _targetSun = GetScheduleSetting(settings, "Schedule_Sunday", 0.0);
+
+                var focusSetting = settings.FirstOrDefault(s => s.Key == "FocusModeEnabled");
+                _isFocusMode = focusSetting != null && focusSetting.Value == "true";
+            }
+            catch
+            {
+                _targetMon = 8.0; _targetTue = 8.0; _targetWed = 8.0; _targetThu = 8.0; _targetFri = 8.0;
+                _targetSat = 0.0; _targetSun = 0.0;
+                _isFocusMode = false;
+            }
+        }
+
+        private double GetScheduleSetting(List<AppSetting> settings, string key, double defaultVal)
+        {
+            var setting = settings.FirstOrDefault(s => s.Key == key);
+            if (setting != null && double.TryParse(setting.Value.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+            {
+                return val;
+            }
+            return defaultVal;
+        }
+
+        private void SaveScheduleSettings()
+        {
+            try
+            {
+                using var db = new DatabaseContext();
+                SaveSetting(db, "Schedule_Monday", TargetMon);
+                SaveSetting(db, "Schedule_Tuesday", TargetTue);
+                SaveSetting(db, "Schedule_Wednesday", TargetWed);
+                SaveSetting(db, "Schedule_Thursday", TargetThu);
+                SaveSetting(db, "Schedule_Friday", TargetFri);
+                SaveSetting(db, "Schedule_Saturday", TargetSat);
+                SaveSetting(db, "Schedule_Sunday", TargetSun);
+                db.SaveChanges();
+
+                RefreshData();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving schedule settings: {ex.Message}");
+            }
+        }
+
+        private void SaveSetting(DatabaseContext db, string key, double value)
+        {
+            var setting = db.AppSettings.Find(key);
+            string valStr = value.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+            if (setting != null)
+            {
+                setting.Value = valStr;
+            }
+            else
+            {
+                db.AppSettings.Add(new AppSetting { Key = key, Value = valStr });
+            }
         }
 
         public void RefreshData()
@@ -711,6 +892,57 @@ namespace WorkTracker.ViewModels
                 foreach (var log in weekTimeOffLogs)
                 {
                     TimeOffDays.Add(log);
+                }
+
+                // Populate daily worked vs target chart data
+                var chartItems = new List<DailyChartItem>();
+                for (int i = 0; i < 7; i++)
+                {
+                    DateTime day = CurrentWeekStart.AddDays(i);
+                    DateTime limitDate = day.AddDays(1);
+
+                    var dayLogs = logs.Where(l => l.StartTime >= day && l.StartTime < limitDate).ToList();
+                    var cutoff = OvertimeCalculator.IsUnitTest ? DateTime.MaxValue : DateTime.Now;
+                    var roundedDayLogs = OvertimeCalculator.ApplyRounding(dayLogs.Where(l => l.StartTime <= cutoff).ToList());
+                    var activeDayLogs = roundedDayLogs
+                        .Where(l => OvertimeCalculator.IsWorkCategory(l.Category) && l.ProcessName != "sick_time")
+                        .ToList();
+                    var mergedDayLogs = OvertimeCalculator.MergeOverlappingLogs(activeDayLogs);
+                    double dayHoursWorked = mergedDayLogs.Sum(l => (l.EndTime - l.StartTime).TotalHours);
+
+                    double dayTimeOff = timeOffs.FirstOrDefault(t => t.Date.Date == day.Date)?.Hours ?? 0;
+                    double daySickHours = logs
+                        .Where(l => l.ProcessName == "sick_time" && l.StartTime.Date == day.Date)
+                        .Sum(l => (l.EndTime - l.StartTime).TotalHours);
+
+                    double baseDayTarget = i == 0 ? TargetMon :
+                                           i == 1 ? TargetTue :
+                                           i == 2 ? TargetWed :
+                                           i == 3 ? TargetThu :
+                                           i == 4 ? TargetFri :
+                                           i == 5 ? TargetSat : TargetSun;
+
+                    double dayTarget = Math.Max(0, baseDayTarget - dayTimeOff - daySickHours);
+
+                    double standard = Math.Min(dayHoursWorked, dayTarget);
+                    double overtime = Math.Max(0, dayHoursWorked - dayTarget);
+                    double remaining = Math.Max(0, dayTarget - dayHoursWorked);
+
+                    chartItems.Add(new DailyChartItem
+                    {
+                        DayName = day.ToString("ddd"), // "Mon", "Tue" etc.
+                        StandardHours = standard,
+                        OvertimeHours = overtime,
+                        RemainingTarget = remaining,
+                        WorkedText = $"{dayHoursWorked:F1}h",
+                        TargetText = $"{dayTarget:F1}h target"
+                    });
+                }
+
+                WeeklyChartData.Clear();
+                foreach (var item in chartItems)
+                {
+                    WeeklyChartData.Add(item);
                 }
 
                 // Populate weekly earnings page daily breakdown
@@ -765,17 +997,19 @@ namespace WorkTracker.ViewModels
                     var mergedDayLogs = OvertimeCalculator.MergeOverlappingLogs(activeDayLogs);
                     double dayHours = mergedDayLogs.Sum(l => (l.EndTime - l.StartTime).TotalHours);
 
-                    double dayTimeOff = 0;
-                    double daySickHours = 0;
-                    if (i < 5)
-                    {
-                        dayTimeOff = timeOffs.FirstOrDefault(t => t.Date.Date == day.Date)?.Hours ?? 0;
-                        // Include sick day logs in the absence total for target calculation
-                        daySickHours = logs
-                            .Where(l => l.ProcessName == "sick_time" && l.StartTime.Date == day.Date)
-                            .Sum(l => (l.EndTime - l.StartTime).TotalHours);
-                    }
-                    double dayTarget = i < 5 ? Math.Max(0, 8.0 - dayTimeOff - daySickHours) : 0;
+                    double dayTimeOff = timeOffs.FirstOrDefault(t => t.Date.Date == day.Date)?.Hours ?? 0;
+                    double daySickHours = logs
+                        .Where(l => l.ProcessName == "sick_time" && l.StartTime.Date == day.Date)
+                        .Sum(l => (l.EndTime - l.StartTime).TotalHours);
+
+                    double baseDayTarget = i == 0 ? TargetMon :
+                                           i == 1 ? TargetTue :
+                                           i == 2 ? TargetWed :
+                                           i == 3 ? TargetThu :
+                                           i == 4 ? TargetFri :
+                                           i == 5 ? TargetSat : TargetSun;
+
+                    double dayTarget = Math.Max(0, baseDayTarget - dayTimeOff - daySickHours);
 
                     double cumulative = calcResult.TotalOvertimeTimeOffEarned;
                     double gained = cumulative - previousCumulative;

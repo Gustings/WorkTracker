@@ -26,8 +26,29 @@ namespace WorkTracker.Services
     {
         public static bool IsUnitTest { get; set; } = false;
 
-        private const double StandardDayHours = 8.0;
-        private const double StandardWeekHours = 40.0;
+        private static double[] GetWeeklySchedule()
+        {
+            var schedule = new double[7] { 8.0, 8.0, 8.0, 8.0, 8.0, 0.0, 0.0 }; // Mon-Sun
+            try
+            {
+                using var db = new Data.DatabaseContext();
+                var settings = db.AppSettings.ToList();
+                string[] dayKeys = { "Schedule_Monday", "Schedule_Tuesday", "Schedule_Wednesday", "Schedule_Thursday", "Schedule_Friday", "Schedule_Saturday", "Schedule_Sunday" };
+                for (int i = 0; i < 7; i++)
+                {
+                    var setting = settings.FirstOrDefault(s => s.Key == dayKeys[i]);
+                    if (setting != null && double.TryParse(setting.Value.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
+                    {
+                        schedule[i] = val;
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback to default
+            }
+            return schedule;
+        }
 
         private class OvertimeSegment
         {
@@ -55,26 +76,49 @@ namespace WorkTracker.Services
                 .Where(l => IsWorkCategory(l.Category) && l.ProcessName != "sick_time")
                 .ToList();
 
-            // Filter time off logs to this week (Mon-Fri only for standard target deduction)
+            // Load custom schedule
+            double[] weeklySchedule = GetWeeklySchedule();
+            double standardWeekHours = weeklySchedule[0] + weeklySchedule[1] + weeklySchedule[2] + weeklySchedule[3] + weeklySchedule[4] + weeklySchedule[5] + weeklySchedule[6];
+
+            // Filter time off logs to this week (any of the 7 days)
             var weekTimeOffs = timeOffLogs
-                .Where(t => t.Date >= weekStart && t.Date < weekStart.AddDays(5))
+                .Where(t => t.Date >= weekStart && t.Date < weekEnd)
                 .ToList();
 
-            // Also count sick-day AppUsageLogs (Mon-Fri only) as target reduction
-            double sickDayHours = 0;
-            for (int s = 0; s < 5; s++)
+            // Calculate target reduction based on custom schedule
+            double targetReduction = 0;
+            double timeOffHours = 0;
+
+            for (int i = 0; i < 7; i++)
             {
-                DateTime sDayStart = weekStart.AddDays(s);
-                DateTime sDayEnd   = sDayStart.AddDays(1);
-                sickDayHours += weekLogs
-                    .Where(l => l.ProcessName == "sick_time" &&
-                                l.StartTime >= sDayStart && l.StartTime < sDayEnd)
-                    .Sum(l => (l.EndTime - l.StartTime).TotalHours);
+                DateTime day = weekStart.AddDays(i);
+                
+                // If it is a time-off day (Vacation, Public Holiday, Holiday)
+                var timeOffDay = weekTimeOffs.FirstOrDefault(t => t.Date.Date == day.Date && (t.Type == "Vacation" || t.Type == "Public Holiday" || t.Type == "Holiday"));
+                bool isTimeOff = timeOffDay != null;
+                
+                // If it is a sick day (ProcessName == "sick_time")
+                bool isSickDay = weekLogs.Any(l => l.ProcessName == "sick_time" && l.StartTime.Date == day.Date);
+                
+                if (isTimeOff || isSickDay)
+                {
+                    targetReduction += weeklySchedule[i];
+                    
+                    if (isTimeOff)
+                    {
+                        timeOffHours += timeOffDay!.Hours;
+                    }
+                    else // sick day
+                    {
+                        double sickHours = weekLogs
+                            .Where(l => l.ProcessName == "sick_time" && l.StartTime.Date == day.Date)
+                            .Sum(l => (l.EndTime - l.StartTime).TotalHours);
+                        timeOffHours += sickHours;
+                    }
+                }
             }
 
-            double timeOffHours = weekTimeOffs.Sum(t => t.Hours) + sickDayHours;
-            double targetHours  = Math.Max(0, StandardWeekHours - timeOffHours);
-
+            double targetHours = Math.Max(0, standardWeekHours - targetReduction);
 
             double weekdayHours = 0;
             double weekendHours = 0;

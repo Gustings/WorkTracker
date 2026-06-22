@@ -1,9 +1,9 @@
 # Project Status: Work Tracker
 
 - **Project Name**: Work Tracker
-- **Current Version**: v1.4.3 (Latest Installer: `WorkTrackerSetup-1.4.3.exe`)
-- **Current Goal**: Create a Windows application that tracks work hours, monitors active application usage to build a daily timeline, and calculates overtime/flexitime based on specific multipliers (1.5x for 16:00-21:00, 2.0x for 21:00-08:00 and weekends, with a standard 7.5-hour day).
-- **Currently Working On**: Active maintenance, updates, and feature additions based on user feedback.
+- **Current Version**: v1.5.0 (Latest Installer: `WorkTrackerSetup-1.5.0.exe`)
+- **Current Goal**: Add dashboard analytics and daily worked vs target stacked bar charts, Focus Mode with smart idle alert suppressions (for full-screen PowerPoint, media players, Teams, Zoom), custom day-by-day work schedules, and startup auto-update checks.
+- **Currently Working On**: Final compile verification, packaging, and manual testing of v1.5.0.
 - **What Has Been Done**:
   - Initialized project tracking structure and finalized MVVM C#/.NET 9.0 WPF setup with local SQLite storage.
   - Implemented Win32 Active App Foreground and Idle monitoring services.
@@ -20,10 +20,15 @@
   - Restructured settings navigation to add dedicated **Update** (with real-time progress logging) and **About App** (with credits and repository link) tabs.
   - Added auto-relaunch support (`Check: WizardSilent` in Inno Setup) to restart the application automatically after a silent update completes.
   - Configured and automated code-signing and setup compilation via `build_and_sign.ps1` using a local certificate.
-  - Successfully published `v1.4.1`, `v1.4.2`, and `v1.4.3` releases and installers to the GitHub repository.
+  - Implemented custom day-by-day work schedules stored in SQLite AppSettings, dynamically driving overtime calculations and target reductions.
+  - Extended idle transition detection to capture foreground monitor resolution and full-screen window states.
+  - Created Focus Mode logic to auto-suppress idle prompt popups (logging idle duration as "Offline Work") and auto-log meetings or work during full-screen PowerPoint, VLC, Teams, Zoom, Chrome, or Edge sessions.
+  - Added a native horizontal daily worked vs target stacked bar chart on the dashboard using a custom `DoubleToGridLengthConverter`.
+  - Added automatic check for updates on startup with a prompt dialog allowing the user to initiate the silent installer background process.
+  - Successfully published releases up to `v1.5.0` to the GitHub repository.
 
 ---
 
-## ⏭ Next Step: Gather User Feedback
+## ⏭ Next Step: Release and Verify Version 1.5.0
 
-**Goal**: Monitor local testing of the auto-updater to ensure the application restarts seamlessly after updating, and gather feedback on the new Update and About App settings views.
+**Goal**: Complete local testing of the newly built installer `WorkTrackerSetup-1.5.0.exe`, verify the dashboard chart, Focus Mode, Custom Schedules settings page, and auto-update startup prompt, then publish to GitHub.

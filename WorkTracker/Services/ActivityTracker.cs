@@ -29,11 +29,15 @@ namespace WorkTracker.Services
     {
         public DateTime IdleStartTime { get; }
         public double IdleDurationSeconds { get; }
+        public bool WasFullScreen { get; }
+        public string LastProcessName { get; }
 
-        public IdleEventArgs(DateTime idleStartTime, double idleDurationSeconds)
+        public IdleEventArgs(DateTime idleStartTime, double idleDurationSeconds, bool wasFullScreen, string lastProcessName)
         {
             IdleStartTime = idleStartTime;
             IdleDurationSeconds = idleDurationSeconds;
+            WasFullScreen = wasFullScreen;
+            LastProcessName = lastProcessName;
         }
     }
 
@@ -48,6 +52,35 @@ namespace WorkTracker.Services
 
         [DllImport("user32.dll")]
         private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        private const uint MONITOR_DEFAULTTONEAREST = 2;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct LASTINPUTINFO
@@ -66,9 +99,32 @@ namespace WorkTracker.Services
         private DateTime _idleStartTime;
 
         private bool _isIdle = false;
+        private bool _idleWasFullScreen = false;
+        private string _idleLastProcessName = string.Empty;
 
         public event EventHandler<ActivityEventArgs>? ActivityLogged;
         public event EventHandler<IdleEventArgs>? UserReturnedFromIdle;
+
+        public static bool IsForegroundWindowFullScreen()
+        {
+            IntPtr hwnd = GetForegroundWindow();
+            if (hwnd == IntPtr.Zero) return false;
+
+            if (!GetWindowRect(hwnd, out RECT rect)) return false;
+
+            IntPtr monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (monitor == IntPtr.Zero) return false;
+
+            var monitorInfo = new MONITORINFO();
+            monitorInfo.cbSize = Marshal.SizeOf(monitorInfo);
+            if (!GetMonitorInfo(monitor, ref monitorInfo)) return false;
+
+            // Check if window matches or exceeds the monitor bounds
+            bool matchesWidth = (rect.Left <= monitorInfo.rcMonitor.Left && rect.Right >= monitorInfo.rcMonitor.Right);
+            bool matchesHeight = (rect.Top <= monitorInfo.rcMonitor.Top && rect.Bottom >= monitorInfo.rcMonitor.Bottom);
+
+            return matchesWidth && matchesHeight;
+        }
 
         public ActivityTracker(Func<string, string> categoryResolver, int idleThresholdSeconds = 300)
         {
@@ -108,6 +164,10 @@ namespace WorkTracker.Services
                         _isIdle = true;
                         _idleStartTime = DateTime.Now.AddSeconds(-idleTimeSec);
                         
+                        // Capture foreground app metadata right before/at idle transition
+                        _idleWasFullScreen = IsForegroundWindowFullScreen();
+                        _idleLastProcessName = _lastProcessName;
+
                         // Flush the active app log up to when the user became idle
                         FlushCurrentActivity(_idleStartTime);
                     }
@@ -121,7 +181,7 @@ namespace WorkTracker.Services
                         double idleDuration = (DateTime.Now - _idleStartTime).TotalSeconds;
                         
                         // Fire event so UI can display the return-from-idle prompt
-                        UserReturnedFromIdle?.Invoke(this, new IdleEventArgs(_idleStartTime, idleDuration));
+                        UserReturnedFromIdle?.Invoke(this, new IdleEventArgs(_idleStartTime, idleDuration, _idleWasFullScreen, _idleLastProcessName));
 
                         _lastActiveTime = DateTime.Now;
                         _lastProcessName = string.Empty;
