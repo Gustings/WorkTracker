@@ -16,6 +16,18 @@ Work Tracker is a premium, modern Windows desktop utility designed to track work
 - **Database**: SQLite (EF Core)
 - **installer**: Inno Setup (with digital code-signing automated via PowerShell)
 
+## Installation Guide
+
+To install and run Work Tracker on your PC:
+1. Navigate to the **[Releases](https://github.com/Gustings/WorkTracker/releases)** section of the GitHub repository.
+2. Download the latest installer executable (`WorkTrackerSetup-1.4.3.exe`).
+3. Run the downloaded installer and follow the setup wizard. You can select option preferences to:
+   - Create a desktop shortcut.
+   - Run Work Tracker automatically on Windows boot (recommended).
+4. Click **Finish**. Work Tracker will launch immediately and minimize into your Windows system tray.
+
+Once installed, the application will automatically query this GitHub repository in the background and prompt you to download and install updates silently as they are released.
+
 ## Setup & Local Testing
 1. Clone the repository.
 2. Open the solution in Visual Studio.
