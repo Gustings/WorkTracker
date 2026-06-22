@@ -1,14 +1,14 @@
-; Inno Setup Script for Work Tracker v1.4.2
+; Inno Setup Script for Work Tracker v1.4.3
 [Setup]
 AppId={{29A84BC0-D32A-4FBA-A951-40EA6464522A}}
 AppName=Work Tracker
-AppVersion=1.4.2
+AppVersion=1.4.3
 AppPublisher=Work Tracker
 DefaultDirName={localappdata}\Programs\WorkTracker
 DefaultGroupName=Work Tracker
 DisableProgramGroupPage=yes
 OutputDir=..\Installers
-OutputBaseFilename=WorkTrackerSetup-1.4.2
+OutputBaseFilename=WorkTrackerSetup-1.4.3
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -31,3 +31,4 @@ Name: "{userstartup}\Work Tracker"; Filename: "{app}\WorkTracker.exe"; Tasks: st
 
 [Run]
 Filename: "{app}\WorkTracker.exe"; Description: "{cm:LaunchProgram,Work Tracker}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\WorkTracker.exe"; Flags: nowait; Check: WizardSilent
