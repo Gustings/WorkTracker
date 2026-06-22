@@ -1,0 +1,8 @@
+- [x] Add CurrentSettingsTab and SetSettingsTabCommand to MainViewModel.cs
+- [ ] Create SettingsWindow.xaml layout
+- [ ] Create SettingsWindow.xaml.cs code-behind logic
+- [ ] Update MainWindow.xaml.cs to launch SettingsWindow
+- [ ] Delete obsolete Settings windows from codebase
+- [ ] Run dotnet build to verify compilation
+- [ ] Run dotnet test to check unit tests
+- [ ] Rebuild and sign test executable

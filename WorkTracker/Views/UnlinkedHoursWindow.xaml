@@ -1,0 +1,39 @@
+<Window x:Class="WorkTracker.Views.UnlinkedHoursWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Edit Unlinked Time Off" 
+        Height="220" Width="360"
+        Background="Transparent"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        WindowStartupLocation="CenterOwner">
+    
+    <Border BorderThickness="2" BorderBrush="{StaticResource BorderBrush}" CornerRadius="16" Background="{StaticResource BgBrush}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" /> <!-- Header -->
+                <RowDefinition Height="*" />    <!-- Input -->
+                <RowDefinition Height="Auto" /> <!-- Buttons -->
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                <Ellipse Width="12" Height="12" Fill="{StaticResource SecondaryAccentBrush}" Margin="0,0,10,0" />
+                <TextBlock Text="Edit Unlinked Time Off" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextMainBrush}" />
+            </StackPanel>
+
+            <!-- Input -->
+            <StackPanel Grid.Row="1" Margin="0,0,0,15">
+                <TextBlock Text="Enter the total unlinked time off hours:" FontSize="12" Foreground="{StaticResource TextSecBrush}" Margin="0,0,0,10"/>
+                <TextBox x:Name="HoursInput" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Width="100" Height="32" Padding="5,4" HorizontalAlignment="Left"/>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Save" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0" Padding="15,8" Click="Save_Click"/>
+                <Button Content="Cancel" Style="{StaticResource ModernButtonStyle}" Padding="15,8" Click="Cancel_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,30 @@
+## Ignore Visual Studio and Build Outputs
+.vs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x88/
+build/
+bin/
+obj/
+
+## User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Ignore Installer Executables in root and folder
+Installers/*.exe
+Installers/Archive/*.exe
+
+## Ignore temporary files
+*.tmp
+*.log
+*.bak
+
+## SQLite databases if any local exist
+*.db
+*.db-journal
+*.db-shm
+*.db-wal

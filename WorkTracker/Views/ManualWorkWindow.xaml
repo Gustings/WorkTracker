@@ -1,0 +1,103 @@
+<Window x:Class="WorkTracker.Views.ManualWorkWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add Offline Work" 
+        Height="530" Width="420"
+        Background="Transparent"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        WindowStartupLocation="CenterOwner">
+    
+    <Border BorderThickness="2" BorderBrush="{StaticResource BorderBrush}" CornerRadius="16" Background="{StaticResource BgBrush}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" /> <!-- Header -->
+                <RowDefinition Height="*" />    <!-- Content -->
+                <RowDefinition Height="Auto" /> <!-- Action Buttons -->
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                <Ellipse Width="12" Height="12" Fill="{StaticResource SecondaryAccentBrush}" Margin="0,0,10,0" />
+                <TextBlock x:Name="HeaderTitle" Text="Add Offline Work" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextMainBrush}" />
+            </StackPanel>
+
+            <!-- Content Inputs -->
+            <StackPanel Grid.Row="1" Margin="0,0,0,15">
+                <TextBlock Text="Enter hours worked away from the computer for this day:" FontSize="12" Foreground="{StaticResource TextSecBrush}" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                
+                <!-- Normal Hours -->
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="80" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Normal Work Time" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextMainBrush}"/>
+                        <TextBlock Text="Standard daily hours (1.0x)" FontSize="11" Foreground="{StaticResource TextSecBrush}"/>
+                    </StackPanel>
+                    <TextBox x:Name="NormalHoursInput" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Width="70" Height="32" Padding="5,4"/>
+                </Grid>
+
+                <!-- Overtime 1.5x (from 16:00) -->
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="80" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Overtime from 16:00" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextMainBrush}"/>
+                        <TextBlock Text="Weekday late hours (1.5x)" FontSize="11" Foreground="{StaticResource TextSecBrush}"/>
+                    </StackPanel>
+                    <TextBox x:Name="Ot16HoursInput" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Width="70" Height="32" Padding="5,4"/>
+                </Grid>
+
+                <!-- Overtime 2.0x (from 21:00 / weekend) -->
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="80" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Overtime from 21:00 / Weekend" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextMainBrush}"/>
+                        <TextBlock Text="Night and weekend hours (2.0x)" FontSize="11" Foreground="{StaticResource TextSecBrush}"/>
+                    </StackPanel>
+                    <TextBox x:Name="Ot21HoursInput" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Width="70" Height="32" Padding="5,4"/>
+                </Grid>
+
+                <!-- Registered Time Off -->
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="80" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Registered Time Off (Vacation)" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextMainBrush}"/>
+                        <TextBlock Text="Hours credited — deducted from flex balance" FontSize="11" Foreground="{StaticResource TextSecBrush}"/>
+                    </StackPanel>
+                    <TextBox x:Name="TimeOffHoursInput" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Width="70" Height="32" Padding="5,4"/>
+                </Grid>
+
+                <!-- Sick Day Hours -->
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="80" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Sick Day Hours" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextMainBrush}"/>
+                        <TextBlock Text="Reduces work target — flex balance unchanged" FontSize="11" Foreground="{StaticResource TextSecBrush}"/>
+                    </StackPanel>
+                    <TextBox x:Name="SickDayHoursInput" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Width="70" Height="32" Padding="5,4"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Save Changes" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0" Padding="15,8" Click="Save_Click"/>
+                <Button Content="Cancel" Style="{StaticResource ModernButtonStyle}" Padding="15,8" Click="Cancel_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
