@@ -29,6 +29,8 @@
 
 ---
 
-## ⏭ Next Step: Future Backlog & Enhancements
+## ⏭ Next Step: Cloud Sync & Android Companion App
 
-**Goal**: Plan and prioritize upcoming features based on user usage, such as database backups or advanced reporting tools.
+**Goal**: Prepare for major architectural expansion:
+1. **Cloud Database Synchronization**: Implement synchronization of the local SQLite database to the cloud (e.g., Firebase) to securely sync work logs.
+2. **Android Companion App**: Develop a mobile app for Android that fetches this cloud data and displays work tracking analytics and flex balance statistics in a clean, modern UI.
