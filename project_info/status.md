@@ -3,7 +3,7 @@
 - **Project Name**: Work Tracker
 - **Current Version**: v1.5.0 (Latest Installer: `WorkTrackerSetup-1.5.0.exe`)
 - **Current Goal**: Add dashboard analytics and daily worked vs target stacked bar charts, Focus Mode with smart idle alert suppressions (for full-screen PowerPoint, media players, Teams, Zoom), custom day-by-day work schedules, and startup auto-update checks.
-- **Currently Working On**: Final compile verification, packaging, and manual testing of v1.5.0.
+- **Currently Working On**: Monitoring release feedback and planning future enhancements.
 - **What Has Been Done**:
   - Initialized project tracking structure and finalized MVVM C#/.NET 9.0 WPF setup with local SQLite storage.
   - Implemented Win32 Active App Foreground and Idle monitoring services.
@@ -29,6 +29,6 @@
 
 ---
 
-## ⏭ Next Step: Release and Verify Version 1.5.0
+## ⏭ Next Step: Future Backlog & Enhancements
 
-**Goal**: Complete local testing of the newly built installer `WorkTrackerSetup-1.5.0.exe`, verify the dashboard chart, Focus Mode, Custom Schedules settings page, and auto-update startup prompt, then publish to GitHub.
+**Goal**: Plan and prioritize upcoming features based on user usage, such as database backups or advanced reporting tools.
