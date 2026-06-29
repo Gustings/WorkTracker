@@ -1,7 +1,7 @@
 # Project Status: Work Tracker
 
 - **Project Name**: Work Tracker
-- **Current Version**: v1.5.3 (Latest Installer: `WorkTrackerSetup-1.5.3.exe`)
+- **Current Version**: v1.5.4 (Latest Installer: `WorkTrackerSetup-1.5.4.exe`)
 - **Current Goal**: Add dashboard analytics and daily worked vs target stacked bar charts, Focus Mode with smart idle alert suppressions (for full-screen PowerPoint, media players, Teams, Zoom), custom day-by-day work schedules, and startup auto-update checks.
 - **Currently Working On**: Monitoring release feedback and planning future enhancements.
 - **What Has Been Done**:
@@ -27,7 +27,8 @@
   - Added automatic check for updates on startup with a prompt dialog allowing the user to initiate the silent installer background process.
   - Implemented System Single Instance enforcement using Mutex (`Global\WorkTracker_SingleInstance_Mutex`) and EventWaitHandle to prevent multiple concurrent boots and PC slowdowns.
   - Resolved UI thread access exceptions during background auto-update installation.
-  - Successfully published releases up to `v1.5.3` to the GitHub repository.
+  - Executed 5-pillar QA audit loop, resolving boundary log clamping, handle caching in activity polling, and $O(1)$ dictionary lookups for lifetime balances.
+  - Successfully published releases up to `v1.5.4` to the GitHub repository.
 
 ---
 
