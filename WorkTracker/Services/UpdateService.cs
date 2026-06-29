@@ -174,7 +174,21 @@ namespace WorkTracker.Services
                 });
 
                 await Task.Delay(1000); // Give the UI a moment to show the shutdown log entry
-                System.Windows.Application.Current.Shutdown();
+                
+                if (System.Windows.Application.Current != null)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (System.Windows.Application.Current is App app)
+                        {
+                            app.ExitApplication();
+                        }
+                        else
+                        {
+                            System.Windows.Application.Current.Shutdown();
+                        }
+                    });
+                }
             }
             catch (Exception ex)
             {
