@@ -1,7 +1,7 @@
 # Project Status: Work Tracker
 
 - **Project Name**: Work Tracker
-- **Current Version**: v1.5.1 (Latest Installer: `WorkTrackerSetup-1.5.1.exe`)
+- **Current Version**: v1.5.2 (Latest Installer: `WorkTrackerSetup-1.5.2.exe`)
 - **Current Goal**: Add dashboard analytics and daily worked vs target stacked bar charts, Focus Mode with smart idle alert suppressions (for full-screen PowerPoint, media players, Teams, Zoom), custom day-by-day work schedules, and startup auto-update checks.
 - **Currently Working On**: Monitoring release feedback and planning future enhancements.
 - **What Has Been Done**:
@@ -25,7 +25,8 @@
   - Created Focus Mode logic to auto-suppress idle prompt popups (logging idle duration as "Offline Work") and auto-log meetings or work during full-screen PowerPoint, VLC, Teams, Zoom, Chrome, or Edge sessions.
   - Added a native horizontal daily worked vs target stacked bar chart on the dashboard using a custom `DoubleToGridLengthConverter`.
   - Added automatic check for updates on startup with a prompt dialog allowing the user to initiate the silent installer background process.
-  - Successfully published releases up to `v1.5.1` to the GitHub repository.
+  - Implemented System Single Instance enforcement using Mutex (`Global\WorkTracker_SingleInstance_Mutex`) and EventWaitHandle to prevent multiple concurrent boots and PC slowdowns.
+  - Successfully published releases up to `v1.5.2` to the GitHub repository.
 
 ---
 
