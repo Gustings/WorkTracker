@@ -34,11 +34,76 @@ namespace WorkTracker
         private DateTime? _lockTime;
         private bool _wasLocked = false;
 
+        // Single Instance Control
+        private static System.Threading.Mutex? _singleInstanceMutex;
+        private static System.Threading.EventWaitHandle? _restoreEvent;
+        private static System.Threading.RegisteredWaitHandle? _registeredWaitHandle;
+
         public ActivityTracker Tracker => _tracker!;
+
+        private void CleanupSingleInstance()
+        {
+            if (_registeredWaitHandle != null)
+            {
+                try { _registeredWaitHandle.Unregister(null); } catch { }
+                _registeredWaitHandle = null;
+            }
+            if (_restoreEvent != null)
+            {
+                try { _restoreEvent.Dispose(); } catch { }
+                _restoreEvent = null;
+            }
+            if (_singleInstanceMutex != null)
+            {
+                try { _singleInstanceMutex.ReleaseMutex(); } catch { }
+                try { _singleInstanceMutex.Dispose(); } catch { }
+                _singleInstanceMutex = null;
+            }
+        }
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            const string mutexName = @"Global\WorkTracker_SingleInstance_Mutex_Gustings";
+            const string eventName = @"Global\WorkTracker_RestoreEvent_Gustings";
+
+            bool createdNew;
+            _singleInstanceMutex = new System.Threading.Mutex(true, mutexName, out createdNew);
+
+            if (!createdNew)
+            {
+                // Another instance of Work Tracker is already running. Signal it to restore its main window and exit immediately.
+                try
+                {
+                    using var restoreEvent = System.Threading.EventWaitHandle.OpenExisting(eventName);
+                    restoreEvent.Set();
+                }
+                catch { }
+
+                Shutdown();
+                return;
+            }
+
             base.OnStartup(e);
+
+            // Register event handler to listen for second-instance launch attempts and restore main window
+            try
+            {
+                _restoreEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, eventName);
+                _registeredWaitHandle = System.Threading.ThreadPool.RegisterWaitForSingleObject(
+                    _restoreEvent,
+                    (state, timedOut) =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            ShowMainWindow();
+                        });
+                    },
+                    null,
+                    -1,
+                    false
+                );
+            }
+            catch { }
 
             // 1. Initialize SQLite Database
             try
@@ -212,6 +277,7 @@ namespace WorkTracker
             try
             {
                 string path = Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
+                CleanupSingleInstance();
                 if (!string.IsNullOrEmpty(path))
                 {
                     Process.Start(path);
@@ -334,6 +400,7 @@ namespace WorkTracker
         public void ExitApplication()
         {
             _isExitTriggered = true;
+            CleanupSingleInstance();
             _tracker?.Stop();
             _tracker?.Dispose();
 
