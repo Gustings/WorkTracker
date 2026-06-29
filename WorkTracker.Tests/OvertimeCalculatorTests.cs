@@ -82,7 +82,7 @@ namespace WorkTracker.Tests
             Assert.Equal(2.5, result.NetWeekdayOvertimeHours);
             
             // Gross segments checks
-            Assert.Equal(0.0, result.GrossOvertime10Hours);
+            Assert.Equal(40.0, result.GrossOvertime10Hours);
             Assert.Equal(2.5, result.GrossOvertime15Hours);
             Assert.Equal(0.0, result.GrossOvertime20Hours);
 

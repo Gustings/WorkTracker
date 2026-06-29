@@ -21,13 +21,19 @@ namespace WorkTracker.Services
     public class UpdateService
     {
         private const string GitHubApiUrl = "https://api.github.com/repos/Gustings/WorkTracker/releases/latest";
-        private readonly HttpClient _httpClient;
+        private static readonly HttpClient _httpClient;
+
+        static UpdateService()
+        {
+            _httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(30)
+            };
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("WorkTracker-Updater");
+        }
 
         public UpdateService()
         {
-            _httpClient = new HttpClient();
-            // GitHub API requires a User-Agent header
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("WorkTracker-Updater");
         }
 
         public async Task<UpdateInfo> CheckForUpdatesAsync(Action<string>? logCallback = null)

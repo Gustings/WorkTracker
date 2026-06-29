@@ -1305,16 +1305,27 @@ namespace WorkTracker.ViewModels
 
         private double CalculateLifetimeOvertime(List<AppUsageLog> allLogs, List<TimeOffLog> allTimeOffs)
         {
-            var firstLog = allLogs.OrderBy(l => l.StartTime).FirstOrDefault();
-            if (firstLog == null) return 0;
+            if (allLogs == null || allLogs.Count == 0) return 0;
 
-            DateTime minDate = OvertimeCalculator.GetStartOfWeek(firstLog.StartTime);
+            DateTime minDate = OvertimeCalculator.GetStartOfWeek(allLogs.Min(l => l.StartTime));
             DateTime maxDate = OvertimeCalculator.GetStartOfWeek(DateTime.Now).AddDays(7);
+
+            // Pre-group logs and timeOffs by week start for O(1) week lookups
+            var logsByWeek = allLogs
+                .GroupBy(l => OvertimeCalculator.GetStartOfWeek(l.StartTime))
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var timeOffsByWeek = allTimeOffs
+                .GroupBy(t => OvertimeCalculator.GetStartOfWeek(t.Date))
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             double balance = 0;
             for (DateTime dt = minDate; dt < maxDate; dt = dt.AddDays(7))
             {
-                var result = OvertimeCalculator.Calculate(dt, allLogs, allTimeOffs);
+                var weekLogs = logsByWeek.TryGetValue(dt, out var wl) ? wl : new List<AppUsageLog>();
+                var weekTimeOffs = timeOffsByWeek.TryGetValue(dt, out var wt) ? wt : new List<TimeOffLog>();
+
+                var result = OvertimeCalculator.Calculate(dt, weekLogs, weekTimeOffs);
                 balance += result.TotalOvertimeTimeOffEarned;
             }
 

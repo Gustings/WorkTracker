@@ -80,6 +80,9 @@ namespace WorkTracker.Services
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
         private const uint MONITOR_DEFAULTTONEAREST = 2;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -97,6 +100,10 @@ namespace WorkTracker.Services
         private string _lastWindowTitle = string.Empty;
         private DateTime _lastActiveTime;
         private DateTime _idleStartTime;
+
+        private IntPtr _lastHwnd = IntPtr.Zero;
+        private uint _cachedPid = 0;
+        private string _cachedProcessName = string.Empty;
 
         private bool _isIdle = false;
         private bool _idleWasFullScreen = false;
@@ -197,6 +204,16 @@ namespace WorkTracker.Services
             }
         }
 
+        private static string GetWindowTitleFromHwnd(IntPtr hwnd)
+        {
+            StringBuilder sb = new StringBuilder(256);
+            if (GetWindowText(hwnd, sb, sb.Capacity) > 0)
+            {
+                return sb.ToString();
+            }
+            return string.Empty;
+        }
+
         private void TrackForegroundWindow()
         {
             IntPtr hwnd = GetForegroundWindow();
@@ -208,19 +225,34 @@ namespace WorkTracker.Services
             string processName = "Unknown";
             string windowTitle = "";
 
-            try
+            if (hwnd == _lastHwnd && pid == _cachedPid && !string.IsNullOrEmpty(_cachedProcessName))
             {
-                using var proc = Process.GetProcessById((int)pid);
-                processName = CleanProcessName(proc.ProcessName);
-                windowTitle = proc.MainWindowTitle;
+                processName = _cachedProcessName;
+                windowTitle = GetWindowTitleFromHwnd(hwnd);
             }
-            catch
+            else
             {
-                // Process might have exited between calls
-                if (!string.IsNullOrEmpty(_lastProcessName))
+                try
                 {
-                    processName = _lastProcessName;
-                    windowTitle = _lastWindowTitle;
+                    using var proc = Process.GetProcessById((int)pid);
+                    processName = CleanProcessName(proc.ProcessName);
+                    windowTitle = proc.MainWindowTitle;
+                    if (string.IsNullOrWhiteSpace(windowTitle))
+                    {
+                        windowTitle = GetWindowTitleFromHwnd(hwnd);
+                    }
+
+                    _lastHwnd = hwnd;
+                    _cachedPid = pid;
+                    _cachedProcessName = processName;
+                }
+                catch
+                {
+                    if (!string.IsNullOrEmpty(_lastProcessName))
+                    {
+                        processName = _lastProcessName;
+                        windowTitle = _lastWindowTitle;
+                    }
                 }
             }
 

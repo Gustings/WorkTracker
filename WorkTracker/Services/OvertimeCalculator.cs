@@ -68,12 +68,21 @@ namespace WorkTracker.Services
             // Filter logs to this week first, apply rounding, and filter to work categories.
             // Exclude logs in the future (StartTime > DateTime.Now) so they are not counted before they happen.
             var cutoff = IsUnitTest ? DateTime.MaxValue : DateTime.Now;
-            var weekLogs = logs.Where(l => l.StartTime >= weekStart && l.StartTime < weekEnd && l.StartTime <= cutoff).ToList();
+            var weekLogs = logs.Where(l => l.EndTime > weekStart && l.StartTime < weekEnd && l.StartTime <= cutoff).ToList();
             var roundedWeekLogs = ApplyRounding(weekLogs);
 
             var activeLogs = roundedWeekLogs
-                .Where(l => l.StartTime >= weekStart && l.EndTime <= weekEnd)
+                .Where(l => l.EndTime > weekStart && l.StartTime < weekEnd)
                 .Where(l => IsWorkCategory(l.Category) && l.ProcessName != "sick_time")
+                .Select(l => new AppUsageLog
+                {
+                    Id = l.Id,
+                    ProcessName = l.ProcessName,
+                    WindowTitle = l.WindowTitle,
+                    Category = l.Category,
+                    StartTime = l.StartTime < weekStart ? weekStart : l.StartTime,
+                    EndTime = l.EndTime > weekEnd ? weekEnd : l.EndTime
+                })
                 .ToList();
 
             // Load custom schedule
@@ -147,8 +156,7 @@ namespace WorkTracker.Services
                     foreach (var log in mergedDayLogs)
                     {
                         var segments = SplitOvertimeByTimeOfDay(log.StartTime, log.EndTime);
-                        // Only add segments where the multiplier > 1.0 (overtime)
-                        weekdayOvertimeSegments.AddRange(segments.Where(s => s.Multiplier > 1.0));
+                        weekdayOvertimeSegments.AddRange(segments);
                     }
                 }
                 else // Saturday and Sunday
@@ -158,7 +166,7 @@ namespace WorkTracker.Services
                 }
             }
 
-            double netWeekdayOvertimeHours = weekdayOvertimeSegments.Sum(s => s.DurationHours);
+            double netWeekdayOvertimeHours = weekdayOvertimeSegments.Where(s => s.Multiplier > 1.0).Sum(s => s.DurationHours);
             double weekdayOvertimeTimeOffEarned = 0;
 
             // Group and summarize gross segments
@@ -166,7 +174,7 @@ namespace WorkTracker.Services
             double gross15 = weekdayOvertimeSegments.Where(s => s.Multiplier == 1.5).Sum(s => s.DurationHours);
             double gross20 = weekdayOvertimeSegments.Where(s => s.Multiplier == 2.0).Sum(s => s.DurationHours);
 
-            foreach (var seg in weekdayOvertimeSegments)
+            foreach (var seg in weekdayOvertimeSegments.Where(s => s.Multiplier > 1.0))
             {
                 weekdayOvertimeTimeOffEarned += seg.DurationHours * seg.Multiplier;
             }
@@ -369,6 +377,16 @@ namespace WorkTracker.Services
                     if (next.EndTime > current.EndTime)
                     {
                         current.EndTime = next.EndTime;
+                    }
+                    if (next.Category == "Meeting" && current.Category != "Meeting")
+                    {
+                        current.Category = "Meeting";
+                        current.ProcessName = next.ProcessName;
+                        current.WindowTitle = next.WindowTitle;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(next.WindowTitle) && !current.WindowTitle.Contains(next.WindowTitle))
+                    {
+                        current.WindowTitle += $" / {next.WindowTitle}";
                     }
                 }
                 else

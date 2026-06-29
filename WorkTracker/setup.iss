@@ -1,14 +1,14 @@
-; Inno Setup Script for Work Tracker v1.5.3
+; Inno Setup Script for Work Tracker v1.5.4
 [Setup]
 AppId={{29A84BC0-D32A-4FBA-A951-40EA6464522A}}
 AppName=Work Tracker
-AppVersion=1.5.3
+AppVersion=1.5.4
 AppPublisher=Work Tracker
 DefaultDirName={localappdata}\Programs\WorkTracker
 DefaultGroupName=Work Tracker
 DisableProgramGroupPage=yes
 OutputDir=..\Installers
-OutputBaseFilename=WorkTrackerSetup-1.5.3
+OutputBaseFilename=WorkTrackerSetup-1.5.4
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
